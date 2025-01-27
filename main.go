@@ -1,10 +1,12 @@
 package main
 
 import (
+	"markov-chain/pkg/inputoutput"
 	"flag"
 	"fmt"
 	"os"
 	"io"
+	"math/rand/v2"
 )
 
 // flags: Number Of Words(-w); Prefix(-p); Prefix Length(-l);
@@ -29,6 +31,7 @@ func (q *Queue) Pop() string {
 	}
 	element := q.queue[0]
 	q.queue = q.queue[1:]
+
 	return element
 }
 
@@ -49,13 +52,17 @@ func (q *Queue) Len() int {
 
 
 var (
-	numWordsFlag  = flag.Int("w", 100, "help him")
-	lenFlag = flag.Int("l", 2, "nah dont help him")
-	prefixFlag = flag.String("p", "", "never help anyone")
+	numWordsFlag  = flag.Int("w", 100, "Number of maximum words")
+	lenFlag = flag.Int("l", 2, "Starting prefix")
+	prefixFlag = flag.String("p", "", "Prefix length (default first words from input text)")
+	helpFlag = flag.Bool("help", false, "Show this screen.")
 )
 
 func main() {
 	flag.Parse()
+	if *helpFlag {
+		inputoutput.PrintHelp()
+	}
 	if *numWordsFlag < 0 {
 		fmt.Fprintln(os.Stderr, "The maximum number of words can't be negative.")
 		os.Exit(1)
@@ -77,19 +84,22 @@ func main() {
 		fmt.Fprintln(os.Stderr, "Error while reading input.")
 		os.Exit(1)
 	}
-
 	// text, err := os.ReadFile("temptext.txt")
 	// if err != nil {
 	// 	os.Exit(1)
 	// }
 	WordsMap := map[string][]string{}
 	readingQueue := NewQueue()
+	writingQueue := NewQueue()
 	reader := ""
 	for _, char := range text {
 		if char == '\n' || char == ' ' {
 			if len(reader) != 0 {
 				if readingQueue.Len() != *lenFlag {
 					readingQueue.Push(reader)
+					if *prefixFlag == "" {
+						writingQueue.Push(reader)
+					}
 					reader = ""
 					continue
 				}
@@ -107,7 +117,22 @@ func main() {
 		_ = readingQueue.Pop()
 		readingQueue.Push(reader)
 	}
+	if readingQueue.Len() == 0 {
+		fmt.Fprintln(os.Stderr, "Error: no input text")
+		os.Exit(1)
+	}
 	WordsMap[readingQueue.GetString()] = append(WordsMap[readingQueue.GetString()], " (end)")
+
 	
-	fmt.Println(WordsMap)
+	fmt.Print(writingQueue.GetString(), " ")
+	for i := 0; i < *numWordsFlag-*lenFlag; i++ {
+		word := WordsMap[writingQueue.GetString()][rand.IntN(len(WordsMap[writingQueue.GetString()]))]
+		if word == " (end)" {
+			fmt.Print("\n")
+			os.Exit(0)
+		}
+		fmt.Printf("%s ", word)
+		_ = writingQueue.Pop()
+		writingQueue.Push(word)
+	}
 }
