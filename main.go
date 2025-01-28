@@ -1,12 +1,12 @@
 package main
 
 import (
-	"markov-chain/pkg/inputoutput"
 	"flag"
 	"fmt"
-	"os"
 	"io"
+	"markov-chain/pkg/inputoutput"
 	"math/rand/v2"
+	"os"
 )
 
 // flags: Number Of Words(-w); Prefix(-p); Prefix Length(-l);
@@ -50,18 +50,31 @@ func (q *Queue) Len() int {
 	return len(q.queue)
 }
 
+func MapContains(m map[string][]string, key string) bool {
+	flag := false
+	for mapkey, _ := range m {
+		if mapkey == key {
+			flag = true
+		}
+	}
+
+	return flag
+}
 
 var (
-	numWordsFlag  = flag.Int("w", 100, "Number of maximum words")
-	lenFlag = flag.Int("l", 2, "Starting prefix")
-	prefixFlag = flag.String("p", "", "Prefix length (default first words from input text)")
-	helpFlag = flag.Bool("help", false, "Show this screen.")
+	numWordsFlag = flag.Int("w", 100, "Number of maximum words")
+	lenFlag      = flag.Int("l", 2, "Starting prefix")
+	prefixFlag   = flag.String("p", "", "Prefix length (default first words from input text)")
+	helpFlag     = flag.Bool("help", false, "Show this screen.")
 )
 
 func main() {
 	flag.Parse()
-	if *helpFlag {
+	switch {
+	case *helpFlag:
 		inputoutput.PrintHelp()
+	}
+	if *helpFlag {
 	}
 	if *numWordsFlag < 0 {
 		fmt.Fprintln(os.Stderr, "The maximum number of words can't be negative.")
@@ -77,17 +90,18 @@ func main() {
 		fmt.Fprintln(os.Stderr, "The prefix length can't be more than 5.")
 		os.Exit(1)
 	}
-	fmt.Println(*numWordsFlag)
-	fmt.Println(*lenFlag)
+	stat, _ := os.Stdin.Stat()
+	if (stat.Mode() & os.ModeCharDevice) != 0 {
+		fmt.Fprintln(os.Stderr, "Error. Empty input.")
+		os.Exit(1)
+	}
+
 	text, err := io.ReadAll(os.Stdin)
 	if err != nil {
 		fmt.Fprintln(os.Stderr, "Error while reading input.")
 		os.Exit(1)
 	}
-	// text, err := os.ReadFile("temptext.txt")
-	// if err != nil {
-	// 	os.Exit(1)
-	// }
+
 	WordsMap := map[string][]string{}
 	readingQueue := NewQueue()
 	writingQueue := NewQueue()
@@ -122,8 +136,43 @@ func main() {
 		os.Exit(1)
 	}
 	WordsMap[readingQueue.GetString()] = append(WordsMap[readingQueue.GetString()], " (end)")
+	reader = ""
+	if writingQueue.Len() == 0 {
+		for _, char := range *prefixFlag {
+			if char == '\n' {
+				fmt.Fprintln(os.Stderr, "Error. '\n' is improper character, use space instead.")
+				os.Exit(1)
+			}
+			if char == ' ' {
+				if len(reader) != 0 {
+					writingQueue.Push(reader)
+					reader = ""
+				}
+				continue
+			}
+			reader += string(char)
+		}
+	}
+	if len(reader) != 0 {
+		writingQueue.Push(reader)
+	}
+	if writingQueue.Len() > *lenFlag {
+		fmt.Fprintln(os.Stderr, "Error: Prefix longer than prefix length.")
+		os.Exit(1)
+	} else if writingQueue.Len() < *lenFlag {
+		fmt.Fprintln(os.Stderr, "Error: Prefix shorter than prefix length.")
+		os.Exit(1)
+	}
 
-	
+	if writingQueue.Len() > *numWordsFlag {
+		fmt.Fprintln(os.Stderr, "Error: Prefix longer than words limit.")
+		os.Exit(1)
+	}
+	if !MapContains(WordsMap, writingQueue.GetString()) {
+		fmt.Fprintln(os.Stderr, "Error: Prefix is not present in text")
+		os.Exit(1)
+	}
+
 	fmt.Print(writingQueue.GetString(), " ")
 	for i := 0; i < *numWordsFlag-*lenFlag; i++ {
 		word := WordsMap[writingQueue.GetString()][rand.IntN(len(WordsMap[writingQueue.GetString()]))]
@@ -135,4 +184,5 @@ func main() {
 		_ = writingQueue.Pop()
 		writingQueue.Push(word)
 	}
+	fmt.Print("\n")
 }
