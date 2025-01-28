@@ -70,28 +70,24 @@ var (
 
 func main() {
 	flag.Parse()
+	stat, _ := os.Stdin.Stat()
 	switch {
 	case *helpFlag:
 		inputoutput.PrintHelp()
-	}
-	if *helpFlag {
-	}
-	if *numWordsFlag < 0 {
+		os.Exit(0)
+	case *numWordsFlag < 0:
 		fmt.Fprintln(os.Stderr, "The maximum number of words can't be negative.")
 		os.Exit(1)
-	} else if *numWordsFlag > 10000 {
+	case *numWordsFlag > 10000:
 		fmt.Fprintln(os.Stderr, "The maximum number of words can't be more than 10,000.")
 		os.Exit(1)
-	}
-	if *lenFlag < 1 {
+	case *lenFlag < 1:
 		fmt.Fprintln(os.Stderr, "The prefix length can't be less than 1.")
 		os.Exit(1)
-	} else if *lenFlag > 5 {
+	case *lenFlag > 5:
 		fmt.Fprintln(os.Stderr, "The prefix length can't be more than 5.")
 		os.Exit(1)
-	}
-	stat, _ := os.Stdin.Stat()
-	if (stat.Mode() & os.ModeCharDevice) != 0 {
+	case (stat.Mode() & os.ModeCharDevice) != 0:
 		fmt.Fprintln(os.Stderr, "Error. Empty input.")
 		os.Exit(1)
 	}
@@ -156,19 +152,17 @@ func main() {
 	if len(reader) != 0 {
 		writingQueue.Push(reader)
 	}
-	if writingQueue.Len() > *lenFlag {
+	switch {
+	case writingQueue.Len() > *lenFlag:
 		fmt.Fprintln(os.Stderr, "Error: Prefix longer than prefix length.")
 		os.Exit(1)
-	} else if writingQueue.Len() < *lenFlag {
+	case writingQueue.Len() < *lenFlag:
 		fmt.Fprintln(os.Stderr, "Error: Prefix shorter than prefix length.")
 		os.Exit(1)
-	}
-
-	if writingQueue.Len() > *numWordsFlag {
+	case writingQueue.Len() > *numWordsFlag:
 		fmt.Fprintln(os.Stderr, "Error: Prefix longer than words limit.")
 		os.Exit(1)
-	}
-	if !MapContains(WordsMap, writingQueue.GetString()) {
+	case !MapContains(WordsMap, writingQueue.GetString()):
 		fmt.Fprintln(os.Stderr, "Error: Prefix is not present in text")
 		os.Exit(1)
 	}
