@@ -14,10 +14,12 @@ Accepts maximum number of words to be generated. Program prints generated text a
 Default value: 100
 
 #Constraints:
+
     Given number can't be negative.
     Given number can't be more 10,000.
 
 #Example:
+
 cat input.text | ./markovchain -w 7414
 
 ### Prefix length (-l Int)
@@ -26,10 +28,12 @@ Accepts the prefix length. Program prints generated text according to the Markov
 Default value: 2
 
 #Constraints:
+
     Given prefix length can't be negative or 0.
     Given prefix length can't be greater than 5.
 
 #Example:
+
 cat input.text | ./markovchain -l 4
 
 ### Prefix (-p String)
@@ -38,8 +42,10 @@ Accepts the starting prefix. Program prints generated text according to the Mark
 By default starting prefix matches with provided text.
 
 #Constraints:
+
     Given prefix must be present in the original text.
     Length of prefix should be the same as the prefix length value
 
 #Example:
+
 cat input.text | ./markovchain -p "Hello World!"
