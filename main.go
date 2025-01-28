@@ -11,56 +11,6 @@ import (
 
 // flags: Number Of Words(-w); Prefix(-p); Prefix Length(-l);
 
-type Queue struct {
-	queue []string
-}
-
-func NewQueue() *Queue {
-	return &Queue{
-		queue: make([]string, 0),
-	}
-}
-
-func (q *Queue) Push(v string) {
-	q.queue = append(q.queue, v)
-}
-
-func (q *Queue) Pop() string {
-	if len(q.queue) == 0 {
-		return "Empty queue"
-	}
-	element := q.queue[0]
-	q.queue = q.queue[1:]
-
-	return element
-}
-
-func (q *Queue) GetString() string {
-	str := ""
-	for i, a := range q.queue {
-		str += a
-		if i+1 != len(q.queue) {
-			str += " "
-		}
-	}
-	return str
-}
-
-func (q *Queue) Len() int {
-	return len(q.queue)
-}
-
-func MapContains(m map[string][]string, key string) bool {
-	flag := false
-	for mapkey, _ := range m {
-		if mapkey == key {
-			flag = true
-		}
-	}
-
-	return flag
-}
-
 var (
 	numWordsFlag = flag.Int("w", 100, "Number of maximum words")
 	lenFlag      = flag.Int("l", 2, "Starting prefix")
